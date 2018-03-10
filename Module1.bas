@@ -8,7 +8,7 @@ Sub GS1()
 
     On Error GoTo PROC_ERR
 
-   'Code here
+    'Code here
 
     '---------------
 PROC_EXIT:
@@ -76,7 +76,7 @@ End Sub
 Private Function GetLastRow(sheetName As String, checkColumn As Long, _
     Optional firstrow = 2, Optional lastrow = 600000, _
         Optional backwardCheck = True) As Long
-    'Adott fï¿½l utolsï¿½ sora
+    'Adott fül utolsó sora
     Dim i As Long
     Dim curSheet As Worksheet
     Dim strCell As String
@@ -112,12 +112,12 @@ Private Sub GS1Class_ClassTest()
     
     clGS1Class.Barcode = "01059965271763401020141719073121280122804"
     Debug.Print "clGS1Class.Barcode: " & clGS1Class.Barcode
-    clGS1Class.Catalognumber = "280122804"
-    Debug.Print "clGS1Class.Catalognumber: " & clGS1Class.Catalognumber
-    clGS1Class.EANnumber = "05996527176340"
-    Debug.Print "clGS1Class.EANnumber: " & clGS1Class.EANnumber
-    clGS1Class.LOTnumber = "2014"
-    Debug.Print "clGS1Class.LOTnumber: " & clGS1Class.LOTnumber
+    clGS1Class.CatalogNumber = "280122804"
+    Debug.Print "clGS1Class.Catalognumber: " & clGS1Class.CatalogNumber
+    clGS1Class.EanNumber = "05996527176340"
+    Debug.Print "clGS1Class.EANnumber: " & clGS1Class.EanNumber
+    clGS1Class.LotNumber = "2014"
+    Debug.Print "clGS1Class.LOTnumber: " & clGS1Class.LotNumber
     clGS1Class.ExpirationDate = "190731"
     Debug.Print "clGS1Class.ExpirationDate: " & clGS1Class.ExpirationDate
     
@@ -136,9 +136,26 @@ Private Sub GS1Class_ClassTest()
     clGS1Class.Barcode = "01059965271763401020141719073121280122804"
     Debug.Print "Function GetLOTnumber test: >> " & clGS1Class.GetLOTnumber()
     
+    clGS1Class.Barcode = "01059965271763401020141719073121280122804"
+    Debug.Print "Function GetExpirationDate test: >> " & clGS1Class.GetExpirationDate()
+    
+    clGS1Class.Barcode = "(01)05996527176340(10)2014(17)190731(21)280122804"
+    Debug.Print "Function GetCatalogNumber test: >> " & clGS1Class.GetCatalogNumber()
+    
+    Debug.Print "Function CreateGS1 test: >> " & clGS1Class.CreateGS1("05996527176340", "2014", "190731", "280122804", False)
+    Debug.Print "Function CreateGS1 test: >> " & clGS1Class.CreateGS1("05996527176340", "2014", "190731", "280122804", True)
+    
+    clGS1Class.Barcode = "(01)05996527176340(10)2014(17)190731(21)280122804"
+    Dim Arr() As String
+    Dim iTer As Long
+    Arr = clGS1Class.ParseGS1()
+    For iTer = LBound(Arr) To UBound(Arr)
+        Debug.Print "Function ParseGS1 test" & iTer & " >> " & Arr(iTer)
+    Next iTer
+    
+    
     Set clGS1Class = Nothing
 End Sub
-
 
 
 

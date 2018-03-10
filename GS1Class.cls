@@ -28,6 +28,9 @@ Public Property Let Barcode(parBarcode As String)
     On Error GoTo PROC_ERR
     
     m_strBarcode = parBarcode
+    If InStr(m_strBarcode, "(") > 0 Then
+        m_strBarcode = FormatBarcode()
+    End If
     Debug.Print "GS1Class.Barcode has been set to: " & m_strBarcode
     
 PROC_EXIT:
@@ -51,7 +54,7 @@ PROC_ERR:
     Err.Raise Err.Number
     Resume PROC_EXIT
 End Property
-Public Property Let Catalognumber(parCatalognumber As String)
+Public Property Let CatalogNumber(parCatalognumber As String)
     
     On Error GoTo PROC_ERR
     
@@ -66,11 +69,11 @@ PROC_ERR:
     Resume PROC_EXIT
 End Property
 
-Public Property Get Catalognumber() As String
+Public Property Get CatalogNumber() As String
     
     On Error GoTo PROC_ERR
     
-    Catalognumber = m_strCatalognumber
+    CatalogNumber = m_strCatalognumber
     
 PROC_EXIT:
     Exit Property
@@ -79,7 +82,7 @@ PROC_ERR:
     Err.Raise Err.Number
     Resume PROC_EXIT
 End Property
-Public Property Let EANnumber(parEANnumber As String)
+Public Property Let EanNumber(parEANnumber As String)
     
     On Error GoTo PROC_ERR
     
@@ -94,11 +97,11 @@ PROC_ERR:
     Resume PROC_EXIT
 End Property
 
-Public Property Get EANnumber() As String
+Public Property Get EanNumber() As String
     
     On Error GoTo PROC_ERR
     
-    EANnumber = m_strEANnumber
+    EanNumber = m_strEANnumber
     
 PROC_EXIT:
     Exit Property
@@ -107,7 +110,7 @@ PROC_ERR:
     Err.Raise Err.Number
     Resume PROC_EXIT
 End Property
-Public Property Let LOTnumber(parLOTnumber As String)
+Public Property Let LotNumber(parLOTnumber As String)
     
     On Error GoTo PROC_ERR
     
@@ -122,11 +125,11 @@ PROC_ERR:
     Resume PROC_EXIT
 End Property
 
-Public Property Get LOTnumber() As String
+Public Property Get LotNumber() As String
     
     On Error GoTo PROC_ERR
     
-    LOTnumber = m_strLOTnumber
+    LotNumber = m_strLOTnumber
     
 PROC_EXIT:
     Exit Property
@@ -204,7 +207,7 @@ Function CheckGTINID() As Boolean
     
     blnRes = False
     'Code here
-    If Left(m_strBarcode, 2) = "01" Then
+    If Left(m_strBarcode, 2) = cmstrGtinID Then
         blnRes = True
     End If
     CheckGTINID = blnRes
@@ -325,7 +328,6 @@ FUNC_ERR:
 End Function
 Function GetLOTnumber() As String
     'Get LOT number
-    'Parameters:
     'Returns:LOT number
     'Created by: Laszlo Tamas
 
@@ -348,7 +350,6 @@ Function GetLOTnumber() As String
     If rMatch.Count > 0 Then
         strRes = rMatch.Item(0).SubMatches(2)
     End If
-    'Code here
 
     GetLOTnumber = strRes
     '---------------
@@ -362,6 +363,149 @@ FUNC_ERR:
     End If
     Resume FUNC_EXIT
 End Function
+Function GetExpirationDate() As String
+    'Get expiration date
+    'Returns: expiration date
+    'Created by: Laszlo Tamas
+
+    Dim strRes As String
+    Dim rExp As New RegExp
+    Dim rMatch As Object
+    Dim rItem As Object
+    
+    On Error GoTo FUNC_ERR
+    
+    strRes = m_strBarcode
+    
+    With rExp
+        .Global = True
+        .MultiLine = False
+        .IgnoreCase = True
+        .Pattern = "^(01)(\d{14})10(\d*)17(\d{6})21(\d{9})$"
+    End With
+    Set rMatch = rExp.Execute(m_strBarcode)
+    If rMatch.Count > 0 Then
+        strRes = rMatch.Item(0).SubMatches(3)
+    End If
+
+    GetExpirationDate = strRes
+    '---------------
+FUNC_EXIT:
+    On Error GoTo 0
+    Exit Function
+FUNC_ERR:
+    Debug.Print "Error in Function GetExpirationDate"
+    If Err.Number Then
+        Debug.Print Err.Description
+    End If
+    Resume FUNC_EXIT
+End Function
+Function GetCatalogNumber() As String
+    'Get catalog number
+    'Returns: catalog number
+    'Created by: Laszlo Tamas
+
+    Dim strRes As String
+    Dim rExp As New RegExp
+    Dim rMatch As Object
+    Dim rItem As Object
+    
+    On Error GoTo FUNC_ERR
+    
+    strRes = m_strBarcode
+    
+    With rExp
+        .Global = True
+        .MultiLine = False
+        .IgnoreCase = True
+        .Pattern = "^(01)(\d{14})10(\d*)17(\d{6})21(\d{9})$"
+    End With
+    Set rMatch = rExp.Execute(m_strBarcode)
+    If rMatch.Count > 0 Then
+        strRes = rMatch.Item(0).SubMatches(4)
+    End If
+
+    GetCatalogNumber = strRes
+    '---------------
+FUNC_EXIT:
+    On Error GoTo 0
+    Exit Function
+FUNC_ERR:
+    Debug.Print "Error in Function GetCatalogNumber"
+    If Err.Number Then
+        Debug.Print Err.Description
+    End If
+    Resume FUNC_EXIT
+End Function
+
+Function CreateGS1(EanNumber As String, LotNumber As String, ExpirationDate As String, CatalogNumber As String, Optional WithBrackets As Boolean = False) As String
+    'Create GS1 barcode
+    'Parameters:
+    '           EanNumber EAN number
+    '           LotNumber LOT number
+    '           ExpirationDate expiration date
+    '           CatalogNumber catalog number
+    '           WithBrackets wether output contains brackets for human reading
+    'Returns: GS1 barcode
+    'Created by: Laszlo Tamas
+
+    Dim strRes As String
+    Dim bracketBefore As String
+    Dim bracketAfter As String
+    
+    On Error GoTo FUNC_ERR
+    bracketBefore = ""
+    bracketAfter = ""
+    If WithBrackets Then
+        bracketBefore = "("
+        bracketAfter = ")"
+    End If
+    strRes = bracketBefore + cmstrGtinID + bracketAfter + EanNumber
+    strRes = strRes + bracketBefore + cmstrLotID + bracketAfter + LotNumber
+    strRes = strRes + bracketBefore + cmstrExpirationDateID + bracketAfter + ExpirationDate
+    strRes = strRes + bracketBefore + cmstrCatalogNumberID + bracketAfter + CatalogNumber
+    
+
+    CreateGS1 = strRes
+    '---------------
+FUNC_EXIT:
+    On Error GoTo 0
+    Exit Function
+FUNC_ERR:
+    Debug.Print "Error in Function CreateGS1"
+    If Err.Number Then
+        Debug.Print Err.Description
+    End If
+    Resume FUNC_EXIT
+End Function
+Function ParseGS1() As String()
+    'Parse GS1 code
+    'Returns: array with barcode elements, (01) EAN, (10) LOT, (17) expiration date, (21) catalog number
+    'Created by: Laszlo Tamas
+
+    Dim strRes(3) As String
+
+    On Error GoTo FUNC_ERR
+
+    strRes(0) = GetEANnumber()
+    strRes(1) = GetLOTnumber()
+    strRes(2) = GetExpirationDate()
+    strRes(3) = GetCatalogNumber()
+    'Code here
+
+    ParseGS1 = strRes
+    '---------------
+FUNC_EXIT:
+    On Error GoTo 0
+    Exit Function
+FUNC_ERR:
+    Debug.Print "Error in Function ParseGS1"
+    If Err.Number Then
+        Debug.Print Err.Description
+    End If
+    Resume FUNC_EXIT
+End Function
+
 
 
 
