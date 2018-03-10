@@ -45,7 +45,7 @@ Public Property Get Barcode() As String
     
     On Error GoTo PROC_ERR
     
-    Barcode = m_strBarcode
+    Barcode = FormatBarcode()
     
 PROC_EXIT:
     Exit Property
@@ -72,7 +72,7 @@ End Property
 Public Property Get CatalogNumber() As String
     
     On Error GoTo PROC_ERR
-    
+    m_strCatalognumber = GetCatalogNumber
     CatalogNumber = m_strCatalognumber
     
 PROC_EXIT:
@@ -100,7 +100,7 @@ End Property
 Public Property Get EanNumber() As String
     
     On Error GoTo PROC_ERR
-    
+    m_strEANnumber = GetEANnumber()
     EanNumber = m_strEANnumber
     
 PROC_EXIT:
@@ -128,7 +128,7 @@ End Property
 Public Property Get LotNumber() As String
     
     On Error GoTo PROC_ERR
-    
+    m_strLOTnumber = GetLOTnumber()
     LotNumber = m_strLOTnumber
     
 PROC_EXIT:
@@ -156,7 +156,7 @@ End Property
 Public Property Get ExpirationDate() As String
     
     On Error GoTo PROC_ERR
-    
+    m_strExpirationDate = GetExpirationDate()
     ExpirationDate = m_strExpirationDate
     
 PROC_EXIT:

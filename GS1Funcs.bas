@@ -1,4 +1,4 @@
-Attribute VB_Name = "Module1"
+Attribute VB_Name = "GS1Funcs"
 Option Explicit
 Sub GS1()
     'Description
@@ -105,7 +105,35 @@ Private Function GetLastRow(sheetName As String, checkColumn As Long, _
     Set curSheet = Nothing
     Debug.Print "LastRow of " & sheetName & ": " & GetLastRow & " ChkCol:" & checkColumn
 End Function
-
+Function GS1GetEANNumber(ByVal code)
+    Dim clGS1Class As New GS1Class
+    clGS1Class.Barcode = code
+    GS1GetEANNumber = clGS1Class.EANnumber
+    Set clGS1Class = Nothing
+End Function
+Function GS1GetCatalogNumber(ByVal code)
+    Dim clGS1Class As New GS1Class
+    clGS1Class.Barcode = code
+    GS1GetCatalogNumber = clGS1Class.CatalogNumber
+    Set clGS1Class = Nothing
+End Function
+Function GS1GetLOTNumber(ByVal code)
+    Dim clGS1Class As New GS1Class
+    clGS1Class.Barcode = code
+    GS1GetLOTNumber = clGS1Class.LOTnumber
+    Set clGS1Class = Nothing
+End Function
+Function GS1GetExpirationDate(ByVal code)
+    Dim clGS1Class As New GS1Class
+    clGS1Class.Barcode = code
+    GS1GetExpirationDate = clGS1Class.ExpirationDate
+    Set clGS1Class = Nothing
+End Function
+Function GS1CreateGS1(ByVal EANnumber As String, ByVal LOTnumber As String, ByVal ExpirationDate As String, ByVal CatalogNumber As String, Optional WithBrackets As Boolean = False)
+    Dim clGS1Class As New GS1Class
+    GS1CreateGS1 = clGS1Class.CreateGS1(EANnumber, LOTnumber, ExpirationDate, CatalogNumber, WithBrackets)
+    Set clGS1Class = Nothing
+End Function
 
 Private Sub GS1Class_ClassTest()
     Dim clGS1Class As New GS1Class
@@ -114,10 +142,10 @@ Private Sub GS1Class_ClassTest()
     Debug.Print "clGS1Class.Barcode: " & clGS1Class.Barcode
     clGS1Class.CatalogNumber = "280122804"
     Debug.Print "clGS1Class.Catalognumber: " & clGS1Class.CatalogNumber
-    clGS1Class.EanNumber = "05996527176340"
-    Debug.Print "clGS1Class.EANnumber: " & clGS1Class.EanNumber
-    clGS1Class.LotNumber = "2014"
-    Debug.Print "clGS1Class.LOTnumber: " & clGS1Class.LotNumber
+    clGS1Class.EANnumber = "05996527176340"
+    Debug.Print "clGS1Class.EANnumber: " & clGS1Class.EANnumber
+    clGS1Class.LOTnumber = "2014"
+    Debug.Print "clGS1Class.LOTnumber: " & clGS1Class.LOTnumber
     clGS1Class.ExpirationDate = "190731"
     Debug.Print "clGS1Class.ExpirationDate: " & clGS1Class.ExpirationDate
     
