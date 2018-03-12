@@ -129,9 +129,9 @@ Function GS1GetExpirationDate(ByVal code)
     GS1GetExpirationDate = clGS1Class.ExpirationDate
     Set clGS1Class = Nothing
 End Function
-Function GS1CreateGS1(ByVal EANnumber As String, ByVal LOTnumber As String, ByVal ExpirationDate As String, ByVal CatalogNumber As String, Optional WithBrackets As Boolean = False)
+Function GS1CreateGS1(ByVal EANnumber As String, ByVal LOTnumber As String, ByVal ExpirationDate As String, ByVal CatalogNumber As String, Optional OutputStyle As String = "Normal")
     Dim clGS1Class As New GS1Class
-    GS1CreateGS1 = clGS1Class.CreateGS1(EANnumber, LOTnumber, ExpirationDate, CatalogNumber, WithBrackets)
+    GS1CreateGS1 = clGS1Class.CreateGS1(EANnumber, LOTnumber, ExpirationDate, CatalogNumber, OutputStyle)
     Set clGS1Class = Nothing
 End Function
 
@@ -170,8 +170,12 @@ Private Sub GS1Class_ClassTest()
     clGS1Class.Barcode = "(01)05996527176340(10)2014(17)190731(21)280122804"
     Debug.Print "Function GetCatalogNumber test: >> " & clGS1Class.GetCatalogNumber()
     
-    Debug.Print "Function CreateGS1 test: >> " & clGS1Class.CreateGS1("05996527176340", "2014", "190731", "280122804", False)
-    Debug.Print "Function CreateGS1 test: >> " & clGS1Class.CreateGS1("05996527176340", "2014", "190731", "280122804", True)
+    
+    
+    Debug.Print "Function CreateGS1 test: >> " & clGS1Class.CreateGS1("05996527176340", "2014", "190731", "280122804", "Normal")
+    Debug.Print "Function CreateGS1 test: >> " & clGS1Class.CreateGS1("05996527176340", "2014", "190731", "280122804", "Brackets")
+    Debug.Print "Function CreateGS1 test: >> " & clGS1Class.CreateGS1("05996527176340", "2014", "190731", "280122804", "ZPL")
+    Debug.Print "Function CreateGS1 test: >> " & clGS1Class.CreateGS1("05996527176340", "2014", "190731", "280122804", "Character")
     
     clGS1Class.Barcode = "(01)05996527176340(10)2014(17)190731(21)280122804"
     Dim Arr() As String
@@ -184,6 +188,5 @@ Private Sub GS1Class_ClassTest()
     
     Set clGS1Class = Nothing
 End Sub
-
 
 
