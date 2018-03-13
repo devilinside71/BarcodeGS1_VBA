@@ -270,7 +270,7 @@ Function Verify() As Boolean
     End With
     Set rMatch = rExp.Execute(m_strBarcode)
     'Debug.Print rMatch.Count
-    If rMatch.Count > 0 Then
+    If rMatch.count > 0 Then
 '        For Each rItem In rMatch
 '            'code here
 '        Next rItem
@@ -311,7 +311,7 @@ Function GetEANnumber() As String
         .Pattern = "^(01)(\d{14})10(\d*)17(\d{6})21(\d{9})$"
     End With
     Set rMatch = rExp.Execute(m_strBarcode)
-    If rMatch.Count > 0 Then
+    If rMatch.count > 0 Then
         strRes = rMatch.Item(0).SubMatches(1)
     End If
     
@@ -349,7 +349,7 @@ Function GetLOTnumber() As String
         .Pattern = "^(01)(\d{14})10(\d*)17(\d{6})21(\d{9})$"
     End With
     Set rMatch = rExp.Execute(m_strBarcode)
-    If rMatch.Count > 0 Then
+    If rMatch.count > 0 Then
         strRes = rMatch.Item(0).SubMatches(2)
     End If
 
@@ -386,7 +386,7 @@ Function GetExpirationDate() As String
         .Pattern = "^(01)(\d{14})10(\d*)17(\d{6})21(\d{9})$"
     End With
     Set rMatch = rExp.Execute(m_strBarcode)
-    If rMatch.Count > 0 Then
+    If rMatch.count > 0 Then
         strRes = rMatch.Item(0).SubMatches(3)
     End If
 
@@ -423,7 +423,7 @@ Function GetCatalogNumber() As String
         .Pattern = "^(01)(\d{14})10(\d*)17(\d{6})21(\d{9})$"
     End With
     Set rMatch = rExp.Execute(m_strBarcode)
-    If rMatch.Count > 0 Then
+    If rMatch.count > 0 Then
         strRes = rMatch.Item(0).SubMatches(4)
     End If
 
@@ -440,13 +440,9 @@ FUNC_ERR:
     Resume FUNC_EXIT
 End Function
 
-Function CreateGS1(EANnumber As String, LOTnumber As String, ExpirationDate As String, CatalogNumber As String, Optional OutputStyle As String = "Normal")
+Function CreateGS1(Optional OutputStyle As String = "Normal")
     'Create GS1 barcode
     'Parameters:
-    '           EanNumber EAN number
-    '           LotNumber LOT number
-    '           ExpirationDate expiration date
-    '           CatalogNumber catalog number
     '           OutputStyle output style Normal, Brackets, ZPL, Character
     'Returns: GS1 barcode
     'Created by: Laszlo Tamas
@@ -457,6 +453,17 @@ Function CreateGS1(EANnumber As String, LOTnumber As String, ExpirationDate As S
     Dim tempStr As String
     Dim i
     Dim tt
+    Dim EANnumber As String
+    Dim LOTnumber As String
+    Dim ExpirationDate As String
+    Dim CatalogNumber As String
+    EANnumber = GetEANnumber()
+    LOTnumber = GetLOTnumber()
+    ExpirationDate = GetExpirationDate()
+    CatalogNumber = GetCatalogNumber()
+    
+    
+
     
     On Error GoTo FUNC_ERR
     bracketBefore = ""
@@ -505,7 +512,9 @@ Function CreateGS1(EANnumber As String, LOTnumber As String, ExpirationDate As S
         strRes = strRes + ChrW(&HC8)
         strRes = strRes + GetUniGS1(Trim(CStr(Asc(Right(CatalogNumber, 1)) - 32)))
         'Checkdigit and Stop
-        strRes = strRes + ChrW(&H70) + ChrW(&HCE)
+        Debug.Print "CHD:", StrConv(GetCheckDigit(), vbUnicode)
+        strRes = strRes + GetCheckDigit() + ChrW(&HCE)
+        
     End If
     
     
@@ -522,6 +531,108 @@ FUNC_ERR:
     End If
     Resume FUNC_EXIT
 End Function
+Function GetCheckDigit()
+    'GEt check digit from barcode
+    'Parameters:
+    'Returns:
+    'Created by: Laszlo Tamas
+    
+    Dim strRes
+    
+    On Error GoTo FUNC_ERR
+    
+    
+    'Code here
+    Dim checksum
+    Dim EANnumber As String
+    Dim LOTnumber As String
+    Dim ExpirationDate As String
+    Dim CatalogNumber As String
+    Dim tt, i
+    EANnumber = GetEANnumber()
+    LOTnumber = GetLOTnumber()
+    ExpirationDate = GetExpirationDate()
+    CatalogNumber = GetCatalogNumber()
+    
+    checksum = 105 + GetSumVal("102") + GetSumVal("01") * 2
+    'EAN
+    checksum = checksum + GetSumVal(Mid(EANnumber, 1, 2)) * 3 + GetSumVal(Mid(EANnumber, 3, 2)) * 4 + GetSumVal(Mid(EANnumber, 5, 2)) * 5 + GetSumVal(Mid(EANnumber, 7, 2)) * 6
+    checksum = checksum + GetSumVal(Mid(EANnumber, 9, 2)) * 7 + GetSumVal(Mid(EANnumber, 11, 2)) * 8 + GetSumVal(Mid(EANnumber, 13, 2)) * 9
+    'LOT
+    checksum = checksum + GetSumVal("10") * 10 + GetSumVal(Mid(LOTnumber, 1, 2)) * 11 + GetSumVal(Mid(LOTnumber, 3, 2)) * 12
+    
+    
+    Dim count As Integer
+    count = 12
+    If Len(LOTnumber) > 4 Then
+        count = count + 1
+        checksum = checksum + 100 * count
+        
+        For i = 5 To Len(LOTnumber)
+            count = count + 1
+            tt = GetSumVal(Trim(CStr(Asc(Mid(LOTnumber, i, 1)) - 32)))
+            
+            checksum = checksum + tt
+        Next i
+        count = count + 1
+        checksum = checksum + 99 * count
+        
+    End If
+    'Expiration
+    count = count + 1
+    checksum = checksum + 102 * count
+    count = count + 1
+    checksum = checksum + 17 * count
+    
+    count = count + 1
+    checksum = checksum + GetSumVal(Mid(ExpirationDate, 1, 2)) * count
+    count = count + 1
+    checksum = checksum + GetSumVal(Mid(ExpirationDate, 3, 2)) * count
+    count = count + 1
+    checksum = checksum + GetSumVal(Mid(ExpirationDate, 5, 2)) * count
+    
+    'Catalog
+    count = count + 1
+    checksum = checksum + 21 * count
+    
+    count = count + 1
+    checksum = checksum + GetSumVal(Mid(CatalogNumber, 1, 2)) * count
+    count = count + 1
+    checksum = checksum + GetSumVal(Mid(CatalogNumber, 3, 2)) * count
+    count = count + 1
+    checksum = checksum + GetSumVal(Mid(CatalogNumber, 5, 2)) * count
+    count = count + 1
+    checksum = checksum + GetSumVal(Mid(CatalogNumber, 7, 2)) * count
+    
+    count = count + 1
+    checksum = checksum + 100 * count
+    count = count + 1
+    checksum = checksum + GetSumVal(Trim(CStr(Asc(Right(CatalogNumber, 1)) - 32))) * count
+    
+    Dim modcheck As Integer
+    
+    modcheck = checksum Mod 103
+    Dim modcheckstr As String
+    modcheckstr = Trim(CStr(modcheck))
+    If modcheck < 10 Then
+        modcheckstr = "0" + modcheckstr
+    End If
+    strRes = GetUniGS1(modcheckstr)
+    Debug.Print "CheckDigit:", checksum, modcheck, modcheckstr, strRes
+    
+    GetCheckDigit = strRes
+    '---------------
+FUNC_EXIT:
+    On Error GoTo 0
+    Exit Function
+FUNC_ERR:
+    Debug.Print "Error in Function GetCheckDigit"
+    If Err.Number Then
+        Debug.Print Err.Description
+    End If
+    Resume FUNC_EXIT
+End Function
+
 
 Function GetUniGS1(codeC)
     If codeC = "00" Then GetUniGS1 = ChrW(194)
@@ -624,6 +735,122 @@ Function GetUniGS1(codeC)
     If codeC = "97" Then GetUniGS1 = ChrW(197)
     If codeC = "98" Then GetUniGS1 = ChrW(198)
     If codeC = "99" Then GetUniGS1 = ChrW(199)
+    If codeC = "100" Then GetUniGS1 = ChrW(200)
+    If codeC = "101" Then GetUniGS1 = ChrW(201)
+    If codeC = "102" Then GetUniGS1 = ChrW(202)
+
+End Function
+
+Function GetSumVal(codeC)
+If codeC = "00" Then GetSumVal = 0
+If codeC = "01" Then GetSumVal = 1
+If codeC = "02" Then GetSumVal = 2
+If codeC = "03" Then GetSumVal = 3
+If codeC = "04" Then GetSumVal = 4
+If codeC = "05" Then GetSumVal = 5
+If codeC = "06" Then GetSumVal = 6
+If codeC = "07" Then GetSumVal = 7
+If codeC = "08" Then GetSumVal = 8
+If codeC = "09" Then GetSumVal = 9
+If codeC = "10" Then GetSumVal = 10
+If codeC = "11" Then GetSumVal = 11
+If codeC = "12" Then GetSumVal = 12
+If codeC = "13" Then GetSumVal = 13
+If codeC = "14" Then GetSumVal = 14
+If codeC = "15" Then GetSumVal = 15
+If codeC = "16" Then GetSumVal = 16
+If codeC = "17" Then GetSumVal = 17
+If codeC = "18" Then GetSumVal = 18
+If codeC = "19" Then GetSumVal = 19
+If codeC = "20" Then GetSumVal = 20
+If codeC = "21" Then GetSumVal = 21
+If codeC = "22" Then GetSumVal = 22
+If codeC = "23" Then GetSumVal = 23
+If codeC = "24" Then GetSumVal = 24
+If codeC = "25" Then GetSumVal = 25
+If codeC = "26" Then GetSumVal = 26
+If codeC = "27" Then GetSumVal = 27
+If codeC = "28" Then GetSumVal = 28
+If codeC = "29" Then GetSumVal = 29
+If codeC = "30" Then GetSumVal = 30
+If codeC = "31" Then GetSumVal = 31
+If codeC = "32" Then GetSumVal = 32
+If codeC = "33" Then GetSumVal = 33
+If codeC = "34" Then GetSumVal = 34
+If codeC = "35" Then GetSumVal = 35
+If codeC = "36" Then GetSumVal = 36
+If codeC = "37" Then GetSumVal = 37
+If codeC = "38" Then GetSumVal = 38
+If codeC = "39" Then GetSumVal = 39
+If codeC = "40" Then GetSumVal = 40
+If codeC = "41" Then GetSumVal = 41
+If codeC = "42" Then GetSumVal = 42
+If codeC = "43" Then GetSumVal = 43
+If codeC = "44" Then GetSumVal = 44
+If codeC = "45" Then GetSumVal = 45
+If codeC = "46" Then GetSumVal = 46
+If codeC = "47" Then GetSumVal = 47
+If codeC = "48" Then GetSumVal = 48
+If codeC = "49" Then GetSumVal = 49
+If codeC = "50" Then GetSumVal = 50
+If codeC = "51" Then GetSumVal = 51
+If codeC = "52" Then GetSumVal = 52
+If codeC = "53" Then GetSumVal = 53
+If codeC = "54" Then GetSumVal = 54
+If codeC = "55" Then GetSumVal = 55
+If codeC = "56" Then GetSumVal = 56
+If codeC = "57" Then GetSumVal = 57
+If codeC = "58" Then GetSumVal = 58
+If codeC = "59" Then GetSumVal = 59
+If codeC = "60" Then GetSumVal = 60
+If codeC = "61" Then GetSumVal = 61
+If codeC = "62" Then GetSumVal = 62
+If codeC = "63" Then GetSumVal = 63
+If codeC = "64" Then GetSumVal = 64
+If codeC = "65" Then GetSumVal = 65
+If codeC = "66" Then GetSumVal = 66
+If codeC = "67" Then GetSumVal = 67
+If codeC = "68" Then GetSumVal = 68
+If codeC = "69" Then GetSumVal = 69
+If codeC = "70" Then GetSumVal = 70
+If codeC = "71" Then GetSumVal = 71
+If codeC = "72" Then GetSumVal = 72
+If codeC = "73" Then GetSumVal = 73
+If codeC = "74" Then GetSumVal = 74
+If codeC = "75" Then GetSumVal = 75
+If codeC = "76" Then GetSumVal = 76
+If codeC = "77" Then GetSumVal = 77
+If codeC = "78" Then GetSumVal = 78
+If codeC = "79" Then GetSumVal = 79
+If codeC = "80" Then GetSumVal = 80
+If codeC = "81" Then GetSumVal = 81
+If codeC = "82" Then GetSumVal = 82
+If codeC = "83" Then GetSumVal = 83
+If codeC = "84" Then GetSumVal = 84
+If codeC = "85" Then GetSumVal = 85
+If codeC = "86" Then GetSumVal = 86
+If codeC = "87" Then GetSumVal = 87
+If codeC = "88" Then GetSumVal = 88
+If codeC = "89" Then GetSumVal = 89
+If codeC = "90" Then GetSumVal = 90
+If codeC = "91" Then GetSumVal = 91
+If codeC = "92" Then GetSumVal = 92
+If codeC = "93" Then GetSumVal = 93
+If codeC = "94" Then GetSumVal = 94
+If codeC = "95" Then GetSumVal = 95
+If codeC = "96" Then GetSumVal = 96
+If codeC = "97" Then GetSumVal = 97
+If codeC = "98" Then GetSumVal = 98
+If codeC = "99" Then GetSumVal = 99
+If codeC = "100" Then GetSumVal = 100
+If codeC = "101" Then GetSumVal = 101
+If codeC = "102" Then GetSumVal = 102
+If codeC = "103" Then GetSumVal = 103
+If codeC = "104" Then GetSumVal = 104
+If codeC = "105" Then GetSumVal = 105
+If codeC = "106" Then GetSumVal = 106
+
+
 End Function
 Function ParseGS1() As String()
     'Parse GS1 code
